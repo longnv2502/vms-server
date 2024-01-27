@@ -1,23 +1,41 @@
-name: services
+version: '3.8'
 services:
-  postgresql:
-    extends:
-      file: ./postgres.yml
-      service: postgres
   keycloak:
-    extends:
-      file: ./keycloak.yml
-      service: keycloak
-  sonarqube:
-    extends:
-      file: ./sonar.yml
-      service: sonar
-  redis:
-    extends:
-      file: ./redis.yml
-      service: redis
-  redis-insight:
-    extends:
-      file: ./redis.yml
-      service: redis-insight
+    container_name: keycloak
+    image: quay.io/keycloak/keycloak:22.0.1
+    command: ['start-dev']
+    volumes:
+      - ./volume/keycloak/providers:/opt/keycloak/providers
+    depends_on:
+      - postgres
+    networks:
+      - vms
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_DB=postgres
+      - KC_DB_URL=jdbc:postgresql://postgres/vms-keycloak-db
+      - KC_DB_USERNAME=admin
+      - KC_DB_PASSWORD=admin
+      - KC_LOG_LEVEL=info
+      - TZ=Asia/Ho_Chi_Minh
+    ports:
+      - "9080:8080"
 
+  postgres:
+    container_name: postgresql
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    volumes:
+      - ./volume/postgresql/data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - vms
+
+networks:
+  vms:
+    name: vms-network
+    driver: bridge
